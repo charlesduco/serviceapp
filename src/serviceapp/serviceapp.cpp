@@ -689,7 +689,6 @@ RESULT eServiceApp::start()
 		m_event_started = true;
 	}
 	std::string path_str(m_ref.path);
-
 	if (path_str.find(m_resolve_uri) == 0)
 	{
 		m_resolver = new ResolveUrl(m_ref.path.substr(m_resolve_uri.size()));
@@ -697,6 +696,7 @@ RESULT eServiceApp::start()
 		m_resolver->start();
 		return 0;
 	}
+	std::string audiopath_str;
 	HeaderMap headers = getHttpHeaders(m_ref.path);
 	if (options->HLSExplorer && options->autoSelectStream)
 	{
@@ -753,11 +753,17 @@ RESULT eServiceApp::start()
 					subservice.bitrate, subservice_idx);
 			}
 			path_str = subservice.url;
+
+			if (subservice.audio.compare(subservice.altmedia.groupid) == 0)	
+			{
+				audiopath_str = subservice.altmedia.uri;
+				eDebug("eServiceApp::start - alternative audiostream %s selected", audiopath_str.c_str());
+			}
 			headers = subservice.headers;
 		}
 	}
 	// don't pass fragment part to player
-	player->start(Url(path_str).url(), headers);
+	player->start(Url(path_str).url(), audiopath_str, headers);
 	return 0;
 }
 

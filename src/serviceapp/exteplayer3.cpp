@@ -138,6 +138,11 @@ std::vector<std::string> ExtEplayer3::buildCommand()
 	std::vector<std::string> args;
 	args.push_back("exteplayer3");
 	args.push_back(mPath);
+	if (!mAudioPath.empty())
+	{
+		args.push_back("-x");
+		args.push_back(mAudioPath);
+	}
 	std::map<std::string,std::string>::const_iterator i(mHeaders.find("User-Agent"));
 	if (i != mHeaders.end())
 	{

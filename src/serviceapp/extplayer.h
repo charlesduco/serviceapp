@@ -149,6 +149,7 @@ class BasePlayer: public iPlayerSend, public iPlayerCallback
 
 protected:
 	std::string mPath;
+	std::string mAudioPath;
 	std::map<std::string, std::string> mHeaders;
 	
 	void recvStarted(int status){pCallback->recvStarted(status);};
@@ -173,6 +174,7 @@ public:
 
 	void setCallback(iPlayerCallback *cb){pCallback = cb;}
 	void setPath(const std::string& path){mPath = path;}
+	void setAudioPath(const std::string& audiopath){mAudioPath = audiopath;}
 	void setHttpHeaders(const std::map<std::string, std::string>& headers){mHeaders = headers;}
 
 	virtual int start(eMainloop *context) = 0;
@@ -327,7 +329,7 @@ public:
 		pthread_mutex_destroy(&mWaitForStopMutex);
 		pthread_cond_destroy(&mWaitForStopCond);
 	}
-	int start(const std::string& path, const std::map<std::string,std::string>& headers);
+	int start(const std::string& path, const std::string& audiopath, const std::map<std::string,std::string>& headers);
 	int stop();
 	int pause();
 	int resume();
