@@ -21,9 +21,8 @@ struct M3U8StreamInfo
     HeaderMap headers;
     std::string codecs;
     std::string resolution;
-    std::string audio;
-    M3U8AlternativeMedia altmedia;
-    // TODO video/subtitles..
+    M3U8AlternativeMedia audio;
+    M3U8AlternativeMedia subtitles;
     unsigned long int bitrate;
 
     bool operator<(const M3U8StreamInfo& m) const
@@ -38,8 +37,8 @@ class M3U8VariantsExplorer
     HeaderMap headers;
     std::vector<M3U8StreamInfo> streams;
     const unsigned int redirectLimit;
-    int parseStreamInfoAttributes(const char *line, M3U8StreamInfo& info);
-    int parseAlternativeMediaAttributes(const char *line, M3U8StreamInfo& info, const std::string& url);
+    int parseStreamInfoAttributes(const char *line, M3U8StreamInfo& info, std::vector<M3U8AlternativeMedia>& altstreams);
+    int parseAlternativeMediaAttributes(const char *line, std::vector<M3U8AlternativeMedia>& altstreams, const std::string& url);
     int getVariantsFromMasterUrl(const std::string& url, HeaderMap& headers, unsigned int redirect);
 public:
     M3U8VariantsExplorer(const std::string& url, const HeaderMap& headers):

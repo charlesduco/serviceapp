@@ -87,12 +87,14 @@ int parse_attribute(char **ptr, char **key, char **value)
 }
 
 //https://tools.ietf.org/html/draft-pantos-http-live-streaming-13#section-3.4.10
-int M3U8VariantsExplorer::parseStreamInfoAttributes(const char *attributes, M3U8StreamInfo& info)
+int M3U8VariantsExplorer::parseStreamInfoAttributes(const char *attributes, M3U8StreamInfo& info, std::vector<M3U8AlternativeMedia>& altstreams)
 {
     char *myline = strdup(attributes);
     char *ptr = myline;
     char *key = NULL;
     char *value = NULL;
+    M3U8AlternativeMedia alt;
+    std::vector<M3U8AlternativeMedia>::iterator it;
     while (!parse_attribute(&ptr, &key, &value))
     {
         if (!strcasecmp(key, "bandwidth"))
@@ -102,36 +104,58 @@ int M3U8VariantsExplorer::parseStreamInfoAttributes(const char *attributes, M3U8
         if (!strcasecmp(key, "resolution"))
             info.resolution = value;
         if (!strcasecmp(key, "audio"))
-            info.audio = value;
+        {
+            info.audio.type = "audio";
+            it = std::find_if(altstreams.begin(), altstreams.end(), [value](const M3U8AlternativeMedia& obj) {return obj.groupid == value;});
+            if(it != altstreams.end())
+            {
+                alt = *it;
+                info.audio.uri = alt.uri;
+                info.audio.groupid = alt.groupid;
+            }
+        }
+        if (!strcasecmp(key, "subtitles"))
+        {
+            info.subtitles.type = "subtitles";
+            it = std::find_if(altstreams.begin(), altstreams.end(), [value](const M3U8AlternativeMedia& obj) {return obj.groupid == value;});
+            if(it != altstreams.end())
+            {
+                alt = *it;
+                info.subtitles.uri = alt.uri;
+                info.subtitles.groupid = alt.groupid;
+            }
+        }
     }
     free(myline);
     return 0;
 }
 
-int M3U8VariantsExplorer::parseAlternativeMediaAttributes(const char *attributes, M3U8StreamInfo& info, const std::string& url)
+int M3U8VariantsExplorer::parseAlternativeMediaAttributes(const char *attributes, std::vector<M3U8AlternativeMedia>& altstreams, const std::string& url)
 {
     char *myline = strdup(attributes);
     char *ptr = myline;
     char *key = NULL;
     char *value = NULL;
+    M3U8AlternativeMedia alt;
     while (!parse_attribute(&ptr, &key, &value))
     {
         if (!strcasecmp(key, "type"))
-            info.altmedia.type = value;
+            alt.type = value;
         if (!strcasecmp(key, "group-id"))
-            info.altmedia.groupid = value;
+            alt.groupid = value;
         if (!strcasecmp(key, "uri"))
         {
             if (!strncmp(value, "http", 4))
             {
-                info.altmedia.uri = value;
+                alt.uri = value;
             }
             else
             {
-                info.altmedia.uri = url.substr(0, url.rfind('/') + 1) + value;
+                alt.uri = url.substr(0, url.rfind('/') + 1) + value;
             }
         }
     }
+    altstreams.push_back(alt);
     free(myline);
     return 0;
 }
@@ -240,8 +264,8 @@ int M3U8VariantsExplorer::getVariantsFromMasterUrl(const std::string& url, Heade
     bool contentTypeParsed = false;
     bool m3u8HeaderParsed = false;
     bool m3u8StreamInfoParsing = false;
-    bool m3u8AlternativeMediaParsed = false;
     M3U8StreamInfo m3u8StreamInfo;
+    std::vector<M3U8AlternativeMedia> altstreams;
 
     size_t bufferSize = 1024;
     char *lineBuffer = (char *) malloc(bufferSize);
@@ -349,14 +373,10 @@ int M3U8VariantsExplorer::getVariantsFromMasterUrl(const std::string& url, Heade
             }
             
             // find M3U8 Alternative Media
-            if (!m3u8AlternativeMediaParsed)
+            if (result && !strncmp(lineBuffer, M3U8_ALTERNATIVE_MEDIA, strlen(M3U8_ALTERNATIVE_MEDIA)))
             {
-                if (result && !strncmp(lineBuffer, M3U8_ALTERNATIVE_MEDIA, strlen(M3U8_ALTERNATIVE_MEDIA)))
-                {
-                    std::string parsed(lineBuffer);
-                    parseAlternativeMediaAttributes(parsed.substr(13).c_str(), m3u8StreamInfo, url);
-                    m3u8AlternativeMediaParsed = true;
-                }
+                std::string parsed(lineBuffer);
+                parseAlternativeMediaAttributes(parsed.substr(13).c_str(), altstreams, url);
             }
      
             if (!strncmp(lineBuffer, M3U8_MEDIA_SEQUENCE, strlen(M3U8_MEDIA_SEQUENCE)))
@@ -396,7 +416,7 @@ int M3U8VariantsExplorer::getVariantsFromMasterUrl(const std::string& url, Heade
                 {
                     m3u8StreamInfoParsing = true;
                     std::string parsed(lineBuffer);
-                    parseStreamInfoAttributes(parsed.substr(18).c_str(), m3u8StreamInfo);
+                    parseStreamInfoAttributes(parsed.substr(18).c_str(), m3u8StreamInfo, altstreams);
                 }
                 else
                 {
