@@ -763,13 +763,13 @@ RESULT eServiceApp::start()
 			if (!subservice.subtitles.uri.empty())	
 			{
 				subtitlepath_str = subservice.subtitles.uri;
-				eDebug("eServiceApp::start - alternative subtitles %s available", subtitlepath_str.c_str());
+				eDebug("eServiceApp::start - alternative subtitles %s selected", subtitlepath_str.c_str());
 			}
 			headers = subservice.headers;
 		}
 	}
 	// don't pass fragment part to player
-	player->start(Url(path_str).url(), audiopath_str, headers);
+	player->start(Url(path_str).url(), audiopath_str, subtitlepath_str, headers);
 	return 0;
 }
 

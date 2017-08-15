@@ -213,10 +213,11 @@ void PlayerBackend::_updatePosition()
 	pPlayer->sendUpdatePosition();
 }
 
-int PlayerBackend::start(const std::string& path, const std::string& audiopath, const std::map<std::string,std::string>& headers)
+int PlayerBackend::start(const std::string& path, const std::string& audiopath,const std::string& subtitlepath, const std::map<std::string,std::string>& headers)
 {
 	pPlayer->setPath(path);
 	pPlayer->setAudioPath(audiopath);
+	pPlayer->setSubtitlePath(subtitlepath);
 	pPlayer->setHttpHeaders(headers);
 	// start player only when mainloop in player thread has started
 	mMessageThread.send(Message(Message::tStart));
